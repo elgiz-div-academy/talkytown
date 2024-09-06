@@ -12,6 +12,9 @@ import { MailerModule } from '@nestjs-modules/mailer';
 
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { join } from 'path';
+import { ClsGuard, ClsModule } from 'nestjs-cls';
+import { APP_GUARD } from '@nestjs/core';
+import { FollowModule } from './app/follow/follow.module';
 
 @Module({
   imports: [
@@ -51,11 +54,23 @@ import { join } from 'path';
         },
       },
     }),
+    ClsModule.forRoot({
+      global: true,
+      middleware: { mount: true },
+      guard: { mount: true },
+    }),
     AuthModule,
     UserModule,
     UploadModule,
+    FollowModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ClsGuard,
+    },
+  ],
 })
 export class AppModule {}

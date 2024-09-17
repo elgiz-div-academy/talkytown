@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   Length,
+  Max,
   Min,
   MinLength,
 } from 'class-validator';
@@ -20,7 +21,8 @@ export class SearchUserDto {
   @IsNumber()
   @IsOptional()
   @ApiProperty({ required: false })
-  @Length(0, 100)
+  @Min(0)
+  @Max(50)
   limit: number;
 
   @Type()

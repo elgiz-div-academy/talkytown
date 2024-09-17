@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   ConflictException,
+  forwardRef,
   HttpException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -20,6 +22,8 @@ import { FOLLOW_REQUEST_LIST_SELECT } from './follow.select';
 export class FollowService {
   constructor(
     private cls: ClsService,
+
+    @Inject(forwardRef(() => UserService))
     private userService: UserService,
     @InjectRepository(Follow)
     private followRepo: Repository<Follow>,
@@ -181,5 +185,17 @@ export class FollowService {
       relations: ['followed'],
       select: FOLLOW_REQUEST_LIST_SELECT,
     });
+  }
+
+  async acceptAllRequsts(userId: number) {
+    return await this.followRepo.update(
+      {
+        status: FollowStatus.WAITING,
+        follower: {
+          id: userId,
+        },
+      },
+      { status: FollowStatus.FOLLOWING },
+    );
   }
 }

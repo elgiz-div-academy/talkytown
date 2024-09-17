@@ -12,6 +12,7 @@ import { ImageEntity } from './Image.entity';
 
 import * as bcrypt from 'bcrypt';
 import { Follow } from './Follow.entity';
+import { PostEntity } from './Post.entity';
 
 @Entity()
 export class User extends CommonEntity {
@@ -67,6 +68,9 @@ export class User extends CommonEntity {
     array: true,
   })
   roles: UserRole[];
+
+  @OneToMany(() => PostEntity, (post) => post.user)
+  posts: PostEntity[];
 
   @OneToMany(() => Follow, (follow) => follow.followed)
   iFolloweds: Follow[];

@@ -5,8 +5,7 @@ import { Chat } from './Chat.entity';
 
 @Entity()
 export class MessageEntity extends CommonEntity {
-  @OneToOne(() => User)
-  @JoinColumn()
+  @ManyToOne(() => User)
   sender: User;
 
   @Column()

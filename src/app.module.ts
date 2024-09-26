@@ -20,6 +20,7 @@ import { PostModule } from './app/post/post.module';
 import { ChatModule } from './app/chat/chat.module';
 import { SocketModule } from './socket/socket.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { RedisModule } from './shared/libs/redis/redis.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       signOptions: { expiresIn: '10d' },
     }),
     EventEmitterModule.forRoot(),
+    RedisModule.register({ host: config.redis.host, port: config.redis.port }),
     MailerModule.forRoot({
       transport: {
         host: config.smtp.host,

@@ -16,10 +16,13 @@ import { ChatParticipant } from 'src/database/entities/ChatParticipant.entity';
 import { CHAT_LIST_SELECT, CHAT_MESSAGES_SELECT } from './chat.select';
 import { GetChatMessagesDto } from './dto/get-chat-messages.dto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { RedisService } from 'src/shared/libs/redis/redis.service';
+import { CreateGroupDto } from './dto/create-group.dto';
 
 @Injectable()
 export class ChatService {
   constructor(
+    private redisService: RedisService,
     private eventEmitter: EventEmitter2,
     private cls: ClsService,
     @InjectRepository(Chat)
@@ -38,6 +41,12 @@ export class ChatService {
   async getChats() {
     const myUser = await this.cls.get<User>('user');
 
+    // let cacheData = await this.redisService.get(`chatlist${myUser.id}`);
+    // if (cacheData) {
+    //   console.log('DATA FROM CACHE');
+    //   return JSON.parse(cacheData);
+    // }
+
     let chats = await this.chatRepo
       .createQueryBuilder('chat')
       .select(CHAT_LIST_SELECT)
@@ -50,7 +59,7 @@ export class ChatService {
       .where(`myParticipant.userId = :userId`, { userId: myUser.id })
       .getMany();
 
-    return chats.map((chat) => {
+    let result = chats.map((chat) => {
       let myParticipant = chat.participants.find(
         (p) => p.user.id === myUser.id,
       );
@@ -61,6 +70,10 @@ export class ChatService {
         participants: undefined,
       };
     });
+
+    await this.redisService.set(`chatlist${myUser.id}`, JSON.stringify(result));
+
+    return result;
   }
 
   async getChatMessages(chatId: number, params: GetChatMessagesDto) {
@@ -102,13 +115,31 @@ export class ChatService {
       }
     });
 
-    await Promise.all([chat.save(), this.messageRepo.save(messages)]);
+    await Promise.all([myParticipant.save(), this.messageRepo.save(messages)]);
 
     return messages;
   }
 
+  async createGroup(body: CreateGroupDto) {
+    const { userIds, name } = body;
+
+    const myUser = await this.cls.get<User>('user');
+    let chat = this.chatRepo.create({
+      isGroup: true,
+      name,
+      participants: [...userIds, myUser.id].map((id) => ({
+        user: {
+          id,
+        },
+      })),
+    });
+    await chat.save();
+    return chat;
+  }
+
   async findOrCreateChat(params: { chatId?: number; userId?: number }) {
     let { chatId, userId } = params;
+    let isNew = false;
 
     const myUser = await this.cls.get<User>('user');
 
@@ -146,6 +177,7 @@ export class ChatService {
           ],
         });
         await chat.save();
+        isNew = true;
       }
     } else if (chatId) {
       chat = await this.chatRepo.findOne({
@@ -160,15 +192,16 @@ export class ChatService {
       ) {
         throw new NotFoundException();
       }
-    } else return false;
+    } else return {};
 
-    return chat;
+    return { chat, isNew };
   }
   async sendMessage(params: SendMessageDto) {
     let { userId, chatId } = params;
 
     let myUser = await this.cls.get<User>('user');
-    let chat = await this.findOrCreateChat({ userId, chatId });
+    let { chat, isNew } = await this.findOrCreateChat({ userId, chatId });
+
     if (!chat) throw new BadRequestException();
 
     let message = this.messageRepo.create({
@@ -195,8 +228,18 @@ export class ChatService {
 
     await chat.save();
 
-    this.eventEmitter.emit('chat.update', chat);
+    if (isNew) {
+      this.eventEmitter.emit('chat.create', { chat, message });
+    } else {
+      this.eventEmitter.emit('chat.update', { chat, message });
+    }
     this.eventEmitter.emit('message.create', { chat, message });
+
+    await Promise.all(
+      chat.participants.map((p) =>
+        this.redisService.delete(`chatlist${p.user.id}`),
+      ),
+    );
 
     return {
       status: true,

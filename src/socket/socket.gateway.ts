@@ -108,4 +108,40 @@ export class SocketGateway {
       receiverSocket.emit('message.create', message);
     }
   }
+
+  @OnEvent('chat.create')
+  async handleCreateChat(payload: { chat: Chat; message: MessageEntity }) {
+    const { chat, message } = payload;
+    let participants = chat.participants.filter(
+      (p) => p.user.id != message.sender.id,
+    );
+    let sockets = await this.server.fetchSockets();
+
+    for (let participant of participants) {
+      let socket = sockets.find(
+        (socket) => socket.data?.user?.id == participant.user.id,
+      );
+      if (!socket) continue;
+
+      socket.emit('chat.create', chat);
+    }
+  }
+
+  @OnEvent('chat.update')
+  async handleUpdateChat(payload: { chat: Chat; message: MessageEntity }) {
+    const { chat, message } = payload;
+    let participants = chat.participants.filter(
+      (p) => p.user.id != message.sender.id,
+    );
+    let sockets = await this.server.fetchSockets();
+
+    for (let participant of participants) {
+      let socket = sockets.find(
+        (socket) => socket.data?.user?.id == participant.user.id,
+      );
+      if (!socket) continue;
+
+      socket.emit('chat.update', chat);
+    }
+  }
 }

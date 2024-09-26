@@ -8,7 +8,7 @@ export class ChatParticipant extends CommonEntity {
   @ManyToOne(() => User, (user) => user.chatParticipants)
   user: User;
 
-  @ManyToOne(() => Chat, (chat) => chat.participants)
+  @ManyToOne(() => Chat, (chat) => chat.participants, { onDelete: 'CASCADE' })
   chat: Chat;
 
   @Column({ default: 0 })

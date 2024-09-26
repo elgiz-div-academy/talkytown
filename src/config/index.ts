@@ -15,6 +15,10 @@ export default {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DATABASE,
   },
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: +process.env.REDIS_PORT,
+  },
   smtp: {
     from: process.env.SMTP_FROM,
     host: process.env.SMTP_HOST,

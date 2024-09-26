@@ -3,6 +3,7 @@ import { FindOptionsSelect } from 'typeorm';
 
 export const CHAT_LIST_SELECT = [
   'chat.id',
+  'chat.name',
   'chat.isGroup',
   'chat.lastMessage.id',
   'lastMessage.message',

@@ -17,6 +17,9 @@ export class Chat extends CommonEntity {
   @Column()
   isGroup: boolean;
 
+  @Column({ nullable: true })
+  name: string;
+
   @OneToMany(() => MessageEntity, (message) => message.chat)
   messages: MessageEntity;
 

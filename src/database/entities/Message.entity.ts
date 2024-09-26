@@ -14,6 +14,6 @@ export class MessageEntity extends CommonEntity {
   @Column({ type: 'json', default: [] })
   readBy: number[];
 
-  @ManyToOne(() => Chat, (chat) => chat.messages)
+  @ManyToOne(() => Chat, (chat) => chat.messages, { onDelete: 'CASCADE' })
   chat: Chat;
 }
